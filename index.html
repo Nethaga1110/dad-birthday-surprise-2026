@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy Birthday Dad | Crafted by Nethaga</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-deep: #030814;
+            --bg-card: rgba(12, 23, 42, 0.75);
+            --gold-primary: #f59e0b;
+            --gold-light: #fef3c7;
+            --gold-glow: rgba(245, 158, 11, 0.35);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-gold: rgba(245, 158, 11, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        canvas#bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Ambient Audio Controls */
+        .audio-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(12, 23, 42, 0.8);
+            border: 1px solid var(--border-gold);
+            color: var(--gold-primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .audio-control:active {
+            transform: scale(0.95);
+        }
+
+        /* Header Progress Bar */
+        .progress-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px 20px 0 20px;
+            z-index: 10;
+        }
+
+        .step-indicators {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .step-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(245, 158, 11, 0.15);
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+
+        .step-line-fill {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            height: 2px;
+            background: var(--gold-primary);
+            transform: translateY(-50%);
+            z-index: 1;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        .step-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-deep);
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.active {
+            border-color: var(--gold-primary);
+            background: var(--gold-primary);
+            color: #000;
+            box-shadow: 0 0 12px var(--gold-glow);
+        }
+
+        .step-dot.completed {
+            border-color: var(--gold-primary);
+            background: var(--bg-deep);
+            color: var(--gold-primary);
+        }
+
+        /* Main Container */
+        .main-stage {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            z-index: 10;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .page-card {
+            display: none;
+            background: var(--bg-card);
+            border: 1px solid var(--border-gold);
+            border-radius: 24px;
+            padding: 32px 24px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(245, 158, 11, 0.05);
+            animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            text-align: center;
+        }
+
+        .page-card.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: 'Cinzel', serif;
+            letter-spacing: 1px;
+        }
+
+        .title-gold {
+            background: linear-gradient(135deg, #fff 0%, var(--gold-light) 50%, var(--gold-primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 8px;
+            font-weight: 300;
+        }
+
+        /* Page 1: Hero */
+        .hero-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 50px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--border-gold);
+            color: var(--gold-primary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .hero-title {
+            font-size: 2.2rem;
+            line-height: 1.2;
+            margin-bottom: 16px;
+        }
+
+        .hero-desc {
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        /* Page 2: Virtues Grid */
+        .virtue-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .virtue-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: left;
+        }
+
+        .virtue-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .virtue-title {
+            font-size: 0.85rem;
+            color: var(--gold-primary);
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .virtue-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Page 3: Wishes Grid */
+        .wishes-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .wish-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            border-radius: 16px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wish-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--gold-primary);
+        }
+
+        .sender-name {
+            font-family: 'Cinzel', serif;
+            color: var(--gold-primary);
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .wish-text {
+            font-size: 0.82rem;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+
+        /* Page 4: Celebration */
+        .letter-box {
+            background: rgba(245, 158, 11, 0.04);
+            border: 1px dashed var(--border-gold);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+            font-size: 0.88rem;
+            line-height: 1.7;
+            color: #e2e8f0;
+        }
+
+        /* Navigation Buttons */
+        .nav-actions {
+            margin-top: 24px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 20px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #000;
+            box-shadow: 0 4px 20px var(--gold-glow);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-gold);
+            color: var(--text-main);
+        }
+
+        .btn-secondary:active {
+            transform: scale(0.97);
+        }
+
+        /* Footer & Watermark */
+        footer {
+            padding: 16px;
+            text-align: center;
+            z-index: 10;
+            width: 100%;
+        }
+
+        .watermark {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        .watermark strong {
+            color: var(--gold-primary);
+            font-weight: 600;
+        }
+
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: 1.8rem;
+            }
+            .virtue-grid {
+                grid-template-columns: 1fr;
+            }
+            .page-card {
+                padding: 24px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Canvas -->
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- Audio Toggle -->
+    <button class="audio-control" id="audioBtn" onclick="toggleAudio()">
+        <span id="audioIcon">🎵</span>
+        <span id="audioText">Play Music</span>
+    </button>
+
+    <!-- Step Progress Header -->
+    <div class="progress-container">
+        <div class="step-indicators">
+            <div class="step-line"></div>
+            <div class="step-line-fill" id="progressFill"></div>
+            <div class="step-dot active" id="dot1">1</div>
+            <div class="step-dot" id="dot2">2</div>
+            <div class="step-dot" id="dot3">3</div>
+            <div class="step-dot" id="dot4">4</div>
+        </div>
+    </div>
+
+    <!-- Main Stage / Content -->
+    <main class="main-stage">
+
+        <!-- STEP 1: Welcome Hero -->
+        <div class="page-card active" id="step1">
+            <div class="hero-badge">Special Gift</div>
+            <h1 class="hero-title title-gold">Happy Birthday,<br>Dearest Dad</h1>
+            <p class="hero-desc">
+                Today we celebrate the remarkable man who guides our family with strength, wisdom, and boundless love.
+            </p>
+            <div class="nav-actions">
+                <button class="btn btn-primary" onclick="nextStep(2)">
+                    Begin Journey →
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 2: Pillars & Virtues -->
+        <div class="page-card" id="step2">
+            <h2 class="title-gold">The Pillars You Stand For</h2>
+            <p class="subtitle">Why you are our ultimate hero</p>
+
+            <div class="virtue-grid">
+                <div class="virtue-item">
+                    <div class="virtue-icon">🛡️</div>
+                    <div class="virtue-title">Unshakable Shield</div>
+                    <div class="virtue-desc">Your constant presence gives us comfort and peace of mind.</div>
+                </div>
+                <div class="virtue-item">
+                    <div class="virtue-icon">💡</div>
+                    <div class="virtue-title">Silent Wisdom</div>
+                    <div class="virtue-desc">Guiding us with quiet patience through life's biggest challenges.</div>
+                </div>
+                <div class="virtue-item">
+                    <div class="virtue-icon">⚓</div>
+                    <div class="virtue-title">Family Anchor</div>
+                    <div class="virtue-desc">Holding us all together with strength, sacrifice, and care.</div>
+                </div>
+                <div class="virtue-item">
+                    <div class="virtue-icon">⭐</div>
+                    <div class="virtue-title">Forever Role Model</div>
+                    <div class="virtue-desc">Teaching us integrity and honesty by your daily example.</div>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <button class="btn btn-secondary" onclick="nextStep(1)">← Back</button>
+                <button class="btn btn-primary" onclick="nextStep(3)">Family Wishes →</button>
+            </div>
+        </div>
+
+        <!-- STEP 3: Wishes from Family -->
+        <div class="page-card" id="step3">
+            <h2 class="title-gold">Messages of Love</h2>
+            <p class="subtitle">Heartfelt words from your loved ones</p>
+
+            <div class="wishes-grid">
+                <div class="wish-card">
+                    <div class="sender-name">Ammi</div>
+                    <div class="wish-text">"Thank you for being the pillar of our home and my lifelong companion. Wishing you health, happiness, and peace always!"</div>
+                </div>
+                <div class="wish-card">
+                    <div class="sender-name">Loku</div>
+                    <div class="wish-text">"Wishing the absolute best birthday to the smartest, most supportive dad! Thank you for always believing in me."</div>
+                </div>
+                <div class="wish-card">
+                    <div class="sender-name">Chuti</div>
+                    <div class="wish-text">"Happy Birthday Dad! Thank you for all your warmth, hugs, and for always keeping our home bright with smiles."</div>
+                </div>
+                <div class="wish-card">
+                    <div class="sender-name">Charu</div>
+                    <div class="wish-text">"Happy Birthday! May your day be filled with immense joy, peace, and all the wonderful things you truly deserve."</div>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <button class="btn btn-secondary" onclick="nextStep(2)">← Back</button>
+                <button class="btn btn-primary" onclick="nextStep(4)">Final Letter →</button>
+            </div>
+        </div>
+
+        <!-- STEP 4: Letter & Celebration -->
+        <div class="page-card" id="step4">
+            <h2 class="title-gold">A Tribute to Our Dad</h2>
+            <p class="subtitle">From our hearts to yours</p>
+
+            <div class="letter-box">
+                Dear Dad,<br><br>
+                Words can never truly express how grateful we are for every sacrifice you’ve made, every quiet effort, and every lesson you’ve shared.<br><br>
+                May this year bring you robust health, serene peace, boundless joy, and success in everything you touch.<br><br>
+                <strong>Happy Birthday, Dad! We love you infinitely.</strong>
+            </div>
+
+            <div class="nav-actions" style="flex-direction: column;">
+                <button class="btn btn-primary" style="width:100%" onclick="triggerCelebration()">
+                    🎉 Celebrate & Send Blessings
+                </button>
+                <button class="btn btn-secondary" style="width:100%; margin-top:8px;" onclick="nextStep(1)">
+                    ↺ Restart Story
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Watermark -->
+    <footer>
+        <div class="watermark">
+            Designed &amp; Crafted with Love by <strong>Nethaga</strong>
+        </div>
+    </footer>
+
+    <!-- Interactive Scripts -->
+    <script>
+        // Step Navigation Logic
+        let currentStep = 1;
+
+        function nextStep(step) {
+            document.getElementById(`step${currentStep}`).classList.remove('active');
+            document.getElementById(`dot${currentStep}`).classList.remove('active');
+            
+            if(step > currentStep) {
+                document.getElementById(`dot${currentStep}`).classList.add('completed');
+            } else {
+                document.getElementById(`dot${step}`).classList.remove('completed');
+            }
+
+            currentStep = step;
+
+            document.getElementById(`step${currentStep}`).classList.add('active');
+            document.getElementById(`dot${currentStep}`).classList.add('active');
+
+            // Update Progress Bar Line
+            const progressPercent = ((currentStep - 1) / 3) * 100;
+            document.getElementById('progressFill').style.width = `${progressPercent}%`;
+
+            if(currentStep === 4) {
+                triggerCelebration();
+            }
+        }
+
+        // Celebration Confetti Trigger
+        function triggerCelebration() {
+            var count = 200;
+            var defaults = {
+                origin: { y: 0.7 }
+            };
+
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(count * particleRatio)
+                }));
+            }
+
+            fire(0.25, {
+                spread: 26,
+                startVelocity: 55,
+                colors: ['#f59e0b', '#ffffff']
+            });
+            fire(0.2, {
+                spread: 60,
+                colors: ['#fbbf24', '#d97706']
+            });
+            fire(0.35, {
+                spread: 100,
+                decay: 0.91,
+                scalar: 0.8
+            });
+            fire(0.1, {
+                spread: 120,
+                startVelocity: 25,
+                decay: 0.92,
+                colors: ['#ffffff', '#f59e0b']
+            });
+        }
+
+        // Web Audio Synth Background Music
+        let audioCtx = null;
+        let isPlaying = false;
+        let timer = null;
+
+        function toggleAudio() {
+            if(!isPlaying) {
+                if(!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                audioCtx.resume();
+                isPlaying = true;
+                document.getElementById('audioText').innerText = "Pause Music";
+                document.getElementById('audioIcon').innerText = "⏸️";
+                playSynthMelody();
+            } else {
+                isPlaying = false;
+                clearTimeout(timer);
+                document.getElementById('audioText').innerText = "Play Music";
+                document.getElementById('audioIcon').innerText = "🎵";
+            }
+        }
+
+        function playSynthMelody() {
+            if(!isPlaying) return;
+            
+            const notes = [261.63, 329.63, 392.00, 523.25, 440.00, 349.23]; // Relaxing Chord Notes
+            const note = notes[Math.floor(Math.random() * notes.length)];
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(note, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.1, audioCtx.currentTime + 1);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 4);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 4);
+            
+            timer = setTimeout(playSynthMelody, 2500);
+        }
+
+        // Canvas Particle Background Engine
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedY = -(Math.random() * 0.4 + 0.1);
+                this.opacity = Math.random() * 0.5 + 0.2;
+            }
+
+            update() {
+                this.y += this.speedY;
+                if (this.y < 0) {
+                    this.y = canvas.height;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(245, 158, 11, ${this.opacity})`;
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 40; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    </script>
+</body>
+</html>
